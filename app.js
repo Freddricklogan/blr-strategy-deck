@@ -122,3 +122,28 @@
     li.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
   });
 })();
+
+/* ---- speaker notes ---- */
+(function () {
+  var data = window.BLR_NOTES || {};
+  var panel = document.createElement('aside');
+  panel.className = 'notes'; panel.id = 'notes';
+  panel.innerHTML = '<p class="k">Speaker notes</p><h4 id="notesTitle"></h4><ul id="notesList"></ul>';
+  document.body.appendChild(panel);
+  var btn = document.createElement('button');
+  btn.className = 'notesbtn'; btn.id = 'notesBtn'; btn.textContent = 'Notes'; btn.title = 'Toggle speaker notes (N)';
+  document.body.appendChild(btn);
+  function render() {
+    var active = document.querySelector('.slide.is-active') || document.querySelector('.slide');
+    if (!active) return;
+    var h = active.querySelector('h1,h2');
+    document.getElementById('notesTitle').textContent = h ? h.textContent : '';
+    var list = document.getElementById('notesList'); list.innerHTML = '';
+    (data[active.id] || []).forEach(function (t) { var li = document.createElement('li'); li.textContent = t; list.appendChild(li); });
+  }
+  function toggle() { document.body.classList.toggle('show-notes'); render(); }
+  btn.addEventListener('click', toggle);
+  document.addEventListener('keydown', function (e) { if (e.key === 'n' || e.key === 'N') toggle(); });
+  document.getElementById('deck').addEventListener('scroll', function () { window.requestAnimationFrame(render); });
+  render();
+})();
