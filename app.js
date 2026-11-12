@@ -25,14 +25,20 @@
   deck.addEventListener('scroll', function () { window.requestAnimationFrame(update); });
   document.getElementById('next').addEventListener('click', function () { go(current() + 1); });
   document.getElementById('prev').addEventListener('click', function () { go(current() - 1); });
-  document.addEventListener('keydown', function (e) {
+  deck.setAttribute('tabindex', '-1');
+  deck.style.outline = 'none';
+  window.addEventListener('load', function () { deck.focus({ preventScroll: true }); });
+  deck.addEventListener('mousedown', function (e) { if (!e.target.closest('button,[tabindex]')) deck.focus({ preventScroll: true }); });
+  window.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
+    var onWidget = e.target.closest && e.target.closest('.flip,.phase,#decisions li,.pin,.tab,.navbtn,.notesbtn');
+    if (onWidget && (e.key === ' ' || e.key === 'Enter')) return;
     if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].indexOf(e.key) > -1) { e.preventDefault(); go(current() + 1); }
     if (['ArrowUp', 'ArrowLeft', 'PageUp'].indexOf(e.key) > -1) { e.preventDefault(); go(current() - 1); }
     if (e.key === 'Home') go(0);
     if (e.key === 'End') go(n - 1);
-  });
+  }, true);
   if (location.hash) {
     var target = document.querySelector(location.hash);
     if (target) setTimeout(function () { target.scrollIntoView(); }, 50);
@@ -40,7 +46,13 @@
   update();
 
   /* ---- tap-to-open cards ---- */
-  function toggleFlip(el) { el.classList.toggle('open'); }
+  function toggleFlip(el) {
+    var opening = !el.classList.contains('open');
+    var group = el.parentElement;
+    Array.prototype.forEach.call(group.querySelectorAll('.flip.open'), function (x) { if (x !== el) x.classList.remove('open'); });
+    el.classList.toggle('open', opening);
+    group.classList.toggle('has-open', opening);
+  }
   Array.prototype.forEach.call(document.querySelectorAll('.flip'), function (el) {
     el.addEventListener('click', function () { toggleFlip(el); });
     el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFlip(el); } });
