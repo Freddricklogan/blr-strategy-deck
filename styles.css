@@ -45,8 +45,6 @@ h2{font-size:clamp(2rem,4.6vw,3.8rem);max-width:18ch}
 .flip.open{background:linear-gradient(160deg,rgba(212,167,44,.22),rgba(212,167,44,.08)),var(--panel-hi);border-color:var(--gold-2);box-shadow:0 0 0 2px rgba(243,208,115,.55),0 24px 60px rgba(0,0,0,.45);transform:scale(1.045);z-index:3}
 .flip.open h3{color:#fff;font-size:1.1em}
 .flip.open>p{color:var(--gold-2)}
-.grid.has-open .flip:not(.open){opacity:.45;filter:saturate(.6)}
-.grid.has-open .flip:not(.open):hover{opacity:.8}
 .flip.open .more{max-height:420px;opacity:1;margin-top:.8em;font-size:1.06em;line-height:1.55;color:#fff;border-left:3px solid var(--gold-2);padding-left:.8em}
 .flip .hint{position:absolute;top:12px;right:14px;font-size:.72em;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;transition:opacity .2s}
 .flip.open .hint{opacity:0}
