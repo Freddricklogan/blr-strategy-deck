@@ -37,6 +37,8 @@ h2{font-size:clamp(2rem,4.6vw,3.8rem);max-width:18ch}
 .card p{margin:0;color:var(--ink-2);font-size:.95em}
 .stat .big{font-family:var(--display);font-size:clamp(2.4rem,5.5vw,4.4rem);color:var(--gold-2);line-height:1;font-variant-numeric:tabular-nums}
 .stat p{margin-top:.4em}
+.stat .k{font-size:.72em;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 .5em;font-weight:600}
+.stat .big{font-size:clamp(2rem,4.6vw,3.6rem)}
 /* flip / reveal cards */
 .flip{cursor:pointer;position:relative}
 .flip .more{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s;opacity:0;color:var(--ink);font-size:.92em;margin-top:0}
