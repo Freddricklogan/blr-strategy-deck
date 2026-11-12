@@ -135,27 +135,65 @@
   });
 })();
 
-/* ---- speaker notes ---- */
+/* ---- speaker notes: separate presenter window ---- */
 (function () {
   var data = window.BLR_NOTES || {};
-  var panel = document.createElement('aside');
-  panel.className = 'notes'; panel.id = 'notes';
-  panel.innerHTML = '<p class="k">Speaker notes</p><h4 id="notesTitle"></h4><ul id="notesList"></ul>';
-  document.body.appendChild(panel);
-  var btn = document.createElement('button');
-  btn.className = 'notesbtn'; btn.id = 'notesBtn'; btn.textContent = 'Notes'; btn.title = 'Toggle speaker notes (N)';
-  document.body.appendChild(btn);
-  function render() {
-    var active = document.querySelector('.slide.is-active') || document.querySelector('.slide');
-    if (!active) return;
-    var h = active.querySelector('h1,h2');
-    document.getElementById('notesTitle').textContent = h ? h.textContent : '';
-    var list = document.getElementById('notesList'); list.innerHTML = '';
-    (data[active.id] || []).forEach(function (t) { var li = document.createElement('li'); li.textContent = t; list.appendChild(li); });
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var isPresenter = /[?&]presenter=1/.test(location.search);
+  var chan = ('BroadcastChannel' in window) ? new BroadcastChannel('blr-deck') : null;
+  function titleOf(s) { var h = s.querySelector('h1,h2'); return h ? h.textContent : ''; }
+  function state() {
+    var active = document.querySelector('.slide.is-active') || slides[0];
+    var i = slides.indexOf(active);
+    return { id: active.id, i: i, n: slides.length, title: titleOf(active), next: slides[i + 1] ? titleOf(slides[i + 1]) : 'End of deck' };
   }
-  function toggle() { document.body.classList.toggle('show-notes'); render(); }
-  btn.addEventListener('click', toggle);
-  document.addEventListener('keydown', function (e) { if (e.key === 'n' || e.key === 'N') toggle(); });
-  document.getElementById('deck').addEventListener('scroll', function () { window.requestAnimationFrame(render); });
-  render();
+  function publish() {
+    var s = state();
+    try { localStorage.setItem('blr-deck-state', JSON.stringify(s)); } catch (e) {}
+    if (chan) chan.postMessage(s);
+  }
+
+  if (isPresenter) {
+    /* presenter window: notes only, follows the main deck */
+    document.body.classList.add('presenter');
+    document.title = 'Presenter notes';
+    var box = document.createElement('main');
+    box.className = 'pres';
+    box.innerHTML = '<p class="k">Speaker notes <span id="pCount"></span></p><h4 id="pTitle"></h4><ul id="pList"></ul><p class="k next">Next: <span id="pNext"></span></p><p class="hint">Keep this window on your screen. Use arrow keys here or on the deck; both stay in sync.</p>';
+    document.body.appendChild(box);
+    function show(s) {
+      document.getElementById('pCount').textContent = (s.i + 1) + ' / ' + s.n;
+      document.getElementById('pTitle').textContent = s.title;
+      document.getElementById('pNext').textContent = s.next;
+      var list = document.getElementById('pList'); list.innerHTML = '';
+      (data[s.id] || []).forEach(function (t) { var li = document.createElement('li'); li.textContent = t; list.appendChild(li); });
+      var target = document.getElementById(s.id);
+      if (target && !target.classList.contains('is-active')) target.scrollIntoView();
+    }
+    if (chan) chan.onmessage = function (e) { show(e.data); };
+    window.addEventListener('storage', function (e) { if (e.key === 'blr-deck-state' && e.newValue) show(JSON.parse(e.newValue)); });
+    try { var saved = localStorage.getItem('blr-deck-state'); if (saved) show(JSON.parse(saved)); else show(state()); } catch (e) { show(state()); }
+    /* arrow keys in the presenter window drive the main deck too */
+    document.getElementById('deck').addEventListener('scroll', function () { window.requestAnimationFrame(function () { var s = state(); show(s); if (chan) chan.postMessage({ cmd: 'go', id: s.id }); }); });
+    return;
+  }
+
+  /* main deck: open presenter window, broadcast position, obey presenter navigation */
+  var btn = document.createElement('button');
+  btn.className = 'notesbtn'; btn.id = 'notesBtn'; btn.textContent = 'Presenter notes'; btn.title = 'Open speaker notes in a separate window (N)';
+  document.body.appendChild(btn);
+  var win = null;
+  function openPresenter() {
+    var url = location.pathname + '?presenter=1' + location.hash;
+    if (win && !win.closed) { win.focus(); return; }
+    win = window.open(url, 'blr-presenter', 'width=560,height=760,menubar=no,toolbar=no,location=no,status=no');
+    setTimeout(publish, 600);
+  }
+  btn.addEventListener('click', openPresenter);
+  document.addEventListener('keydown', function (e) { if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey) openPresenter(); });
+  document.getElementById('deck').addEventListener('scroll', function () { window.requestAnimationFrame(publish); });
+  if (chan) chan.onmessage = function (e) {
+    if (e.data && e.data.cmd === 'go') { var t = document.getElementById(e.data.id); if (t && !t.classList.contains('is-active')) t.scrollIntoView({ behavior: 'smooth' }); }
+  };
+  publish();
 })();
